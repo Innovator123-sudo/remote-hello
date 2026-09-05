@@ -28,6 +28,14 @@ const BONES = [
 ];
 
 const $ = (id) => document.getElementById(id);
+const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '';
+let SERVER = '';
+try {
+  const qp = new URLSearchParams(location.search).get('server');
+  SERVER = (qp || localStorage.getItem('tvServer') || '').replace(/\/$/, '');
+  if (qp) { try { localStorage.setItem('tvServer', SERVER); } catch {} }
+} catch {}
+function apiUrl(p) { return SERVER + p; }
 const canvas = $('view');
 const ctx = canvas.getContext('2d');
 const video = $('cam');
@@ -70,7 +78,7 @@ function flash(html) {
 
 async function postKey(keyName) {
   try {
-    const r = await fetch('/api/key', {
+    const r = await fetch(apiUrl('/api/key'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key: keyName }),
@@ -93,7 +101,7 @@ async function postKey(keyName) {
 
 async function pollTv() {
   try {
-    const r = await fetch('/api/status');
+    const r = await fetch(apiUrl('/api/status'));
     const s = await r.json();
     tvReady = s.phase === 'ready';
     if (s.volume) { volLevel = s.volume.level; volMax = s.volume.maximum || 15; }
@@ -497,3 +505,6 @@ document.addEventListener('visibilitychange', () => { dwellZone = null; });
 
 pollTv();
 setInterval(pollTv, 3000);
+if (!IS_LOCAL && !SERVER) {
+  setTimeout(() => toast('🌐 Online mode: set your tunnel URL once on the button page (same site), then reload here — or add ?server=YOUR-LINK to this address.', 9000), 1500);
+}

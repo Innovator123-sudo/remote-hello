@@ -29,6 +29,15 @@ on the same page.
    (HTTPS, so the camera works) → `/gesture.html`
 4. Keep the URL private — anyone with it can press TV buttons.
 
+## Online mode (GitHub Pages, no localhost in the address bar)
+
+A public website can't touch your TV directly (browsers block websites from
+reaching home-network devices), so the Pages site relays through your laptop:
+
+1. Repo → Settings → Pages → Deploy from branch → `main` → `/ (root)`
+2. Run `tv-remote\share-tv.bat`, copy the `https://…trycloudflare.com` link
+3. Open the Pages URL, paste the link in the 🌐 box → Save → pair & control
+
 ## Change TV
 
 Default TV is `192.168.1.84`. Override without editing code:

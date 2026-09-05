@@ -49,6 +49,8 @@ input{width:100%;background:#0a122a;border:1px solid #2a3f70;color:#fff;padding:
 ol.hint{padding-left:20px;margin:6px 0}
 .kbd{font-size:12px;opacity:.7;text-align:center;margin-top:8px}
 .section-label{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#9db4e8;margin:14px 0 2px}
+#srvBox input{letter-spacing:0;text-indent:0;text-align:left;font-size:14px}
+#srvBox .row{margin-bottom:0}
 </style>
 </head>
 <body>
@@ -82,6 +84,10 @@ ol.hint{padding-left:20px;margin:6px 0}
       <div class="row">
         <button class="primary" id="btnStart">🔗 Start pairing</button>
         <button class="danger" id="btnStop">✖ Disconnect</button>
+      </div>
+      <div id="srvBox" style="display:none;margin-top:10px;background:#0a122a;border:1px solid #2a3f70;border-radius:10px;padding:10px">
+        <div class="hint">🌐 <b>Online mode</b> — paste your tunnel URL here (printed by share-tv.bat):</div>
+        <div class="row"><input id="srv" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" spellcheck="false" /><button class="primary" id="btnSrv" style="flex:0 0 auto">Save</button></div>
       </div>
       <div id="codeBox">
         <div class="hint" style="text-align:center">🔑 <b>Pairing code from TV screen</b> (letters + digits, e.g. 27247C)</div>
@@ -157,6 +163,14 @@ ol.hint{padding-left:20px;margin:6px 0}
 </div>
 <script>
 const $ = id => document.getElementById(id);
+const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '';
+let SERVER = '';
+try {
+  const qp = new URLSearchParams(location.search).get('server');
+  SERVER = (qp || localStorage.getItem('tvServer') || '').replace(/\/$/, '');
+  if (qp) { try { localStorage.setItem('tvServer', SERVER); } catch {} }
+} catch {}
+function apiUrl(p) { return SERVER + p; }
 let offlineCount = 0;
 let toastTimer = null;
 
@@ -171,7 +185,7 @@ function toast(msg) {
 async function api(path, body) {
   let r;
   try {
-    r = await fetch(path, { method: body === undefined ? 'GET' : 'POST',
+    r = await fetch(apiUrl(path), { method: body === undefined ? 'GET' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body) });
   } catch (e) {
@@ -235,6 +249,17 @@ $('btnCode').onclick = async () => {
 };
 $('btnYT').onclick = async () => { try { await api('/api/applink', { url: 'https://www.youtube.com/tv' }); } catch (e) { if (e.message === 'OFFLINE') showOffline(); } };
 $('btnNF').onclick = async () => { try { await api('/api/applink', { url: 'https://www.netflix.com/title/70136120' }); } catch (e) { if (e.message === 'OFFLINE') showOffline(); } };
+if (SERVER) $('srv').value = SERVER;
+if (!IS_LOCAL) {
+  $('srvBox').style.display = 'block';
+  $('offline').innerHTML = '⚠️ <b>Online mode</b> — this page alone cannot reach your TV (browsers block websites from touching home devices).<br/>1️⃣ On your laptop, run <code>tv-remote\\share-tv.bat</code><br/>2️⃣ Paste the <code>https://…trycloudflare.com</code> link it prints below → <b>Save</b><br/>3️⃣ Press <b>Start pairing</b>.';
+}
+$('btnSrv').onclick = async () => {
+  SERVER = $('srv').value.trim().replace(/\/$/, '');
+  try { localStorage.setItem('tvServer', SERVER); } catch {}
+  if (!SERVER) { toast('Paste the tunnel URL first.'); return; }
+  toast('Server saved — contacting TV…');
+};
 
 document.addEventListener('keydown', e => {
   if (e.repeat || document.activeElement === $('code')) return;

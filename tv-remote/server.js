@@ -113,8 +113,13 @@ async function beginPairing(host) {
   starting = false;
 }
 
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 function json(res, code, obj) {
-  res.writeHead(code, { 'Content-Type': 'application/json' });
+  res.writeHead(code, Object.assign({ 'Content-Type': 'application/json' }, CORS));
   res.end(JSON.stringify(obj));
 }
 function readBody(req) {
@@ -127,6 +132,12 @@ function readBody(req) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, CORS);
+    res.end();
+    return;
+  }
 
   if (req.method === 'GET' && url.pathname === '/') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
