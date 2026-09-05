@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: tv-remote
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: TV_HOST
+        value: YOUR_PUBLIC_IP_OR_DDNS
+      # after first pairing, open <your-url>/api/cert, copy the JSON,
+      # and add it here as TV_CERT_JSON so pairing survives restarts:
+      # - key: TV_CERT_JSON
+      #   sync: false

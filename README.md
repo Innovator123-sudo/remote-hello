@@ -42,6 +42,28 @@ Same laptop = zero paste: the page auto-finds `http://localhost:8080`
 (browsers allow public pages to reach localhost), so the 🌐 box fills
 itself. Only phones need the one-time paste.
 
+## Fully hosted (phone works with NO laptop, NO bat files)
+
+Your TV must be reachable from the internet first, then the API runs free
+in the cloud (Render) instead of your laptop:
+
+1. **Router port-forward** (once): forward **TCP 6466 + 6467** to the TV
+   (`192.168.1.84`). In your router admin look for Port Forwarding /
+   Virtual Server. Find your public IP at whatsmyip.org.
+   If it never connects from mobile data, your ISP uses CGNAT (common on
+   Jio/Airtel) and blocks this — fall back to `share-tv.bat` on the laptop.
+2. **Deploy**: Render.com → New → Web Service → pick this repo → Docker
+   runtime → set env `TV_HOST` = your public IP (or DDNS name) → Deploy.
+   Free tier sleeps when idle; first tap wakes it in ~40s.
+3. **Phone**: open the Pages remote → 🌐 box → paste your
+   `https://tv-remote-xxxx.onrender.com` → Save → Start pairing (read the
+   PIN off the TV at home) → Send code.
+4. **Stay paired**: open `<your-url>/api/cert`, copy the JSON, add it as
+   env var `TV_CERT_JSON` on Render (then redeploys never unpair).
+
+⚠️ A hosted remote URL = anyone with the link can press TV buttons.
+Only share it with family, and remove the port-forward when travelling.
+
 ## Change TV
 
 Default TV is `192.168.1.84`. Override without editing code:

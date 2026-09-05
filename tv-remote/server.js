@@ -33,6 +33,8 @@ function log(msg) {
 
 function loadCert() {
   try {
+    // hosted/ephemeral disks: paste pairing cert into TV_CERT_JSON env var
+    if (process.env.TV_CERT_JSON) return JSON.parse(process.env.TV_CERT_JSON);
     return JSON.parse(fs.readFileSync(CERT_FILE, 'utf8'));
   } catch { return {}; }
 }
@@ -212,6 +214,11 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': STATIC[url.pathname][1] });
       res.end(fs.readFileSync(path.join(__dirname, STATIC[url.pathname][0])));
     } catch { json(res, 404, { ok: false }); }
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/api/cert') {
+    try { json(res, 200, remote ? remote.getCertificate() : {}); }
+    catch { json(res, 200, {}); }
     return;
   }
   json(res, 404, { ok: false });
