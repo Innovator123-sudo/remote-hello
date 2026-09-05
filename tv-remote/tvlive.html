@@ -82,9 +82,10 @@ ol.hint{padding-left:20px;margin:6px 0}
         </ol>
       </div>
       <div class="row">
-        <button class="primary" id="btnStart">🔗 Start pairing</button>
-        <button class="danger" id="btnStop">✖ Disconnect</button>
+        <button class="primary" id="btnStart" style="font-size:17px;padding:16px 10px">▶ START</button>
+        <button class="danger" id="btnStop">✖</button>
       </div>
+      <div id="agent" class="hint" style="margin-top:6px;min-height:20px"></div>
       <div id="srvBox" style="display:none;margin-top:10px;background:#0a122a;border:1px solid #2a3f70;border-radius:10px;padding:10px">
         <div class="hint">🌐 <b>Online mode</b> — paste your tunnel URL here (printed by share-tv.bat):</div>
         <div class="row"><input id="srv" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" spellcheck="false" /><button class="primary" id="btnSrv" style="flex:0 0 auto">Save</button></div>
@@ -231,11 +232,51 @@ document.querySelectorAll('#pad [data-key]').forEach(b => {
   });
 });
 
+function agentSay(t) { $('agent').textContent = t ? '🤖 ' + t : ''; }
+async function waitPhase(want, timeoutMs) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < timeoutMs) {
+    try {
+      const s = await api('/api/status');
+      if (want.includes(s.phase) || s.phase === 'error') return s;
+    } catch {}
+    await new Promise(r => setTimeout(r, 1200));
+  }
+  return null;
+}
+async function diagnose() {
+  try {
+    const d = await api('/api/diagnose');
+    if (!d.remote6466 && !d.pairing6467) {
+      agentSay('TV looks OFF or offline — turn it ON with its physical button, then press START again.');
+      toast('⚠️ TV not on network. Turn it ON.');
+    } else {
+      agentSay('TV is online — retrying…');
+    }
+    return d;
+  } catch { return null; }
+}
 $('btnStart').onclick = async () => {
   try {
-    if (!IS_LOCAL && !SERVER) { toast('Looking for your laptop server first…'); await autoFindServer(); }
+    agentSay('finding server…');
+    if (!IS_LOCAL && !SERVER) await autoFindServer();
+    let s;
+    try { s = await api('/api/status'); }
+    catch (e) { if (e.message === 'OFFLINE') showOffline(); return; }
+    if (s.phase === 'ready') { agentSay('already connected ✓ — use the remote below.'); toast('Already connected ✓'); return; }
+    agentSay('contacting TV…');
     await api('/api/start', {});
-    toast('Pairing started — watch the TV screen for the code.');
+    s = await waitPhase(['waiting-code', 'ready'], 30000);
+    if (!s) { agentSay('TV is not answering.'); await diagnose(); showOffline(); return; }
+    if (s.phase === 'ready') { agentSay('connected ✓ — remote is live.'); return; }
+    if (s.phase === 'waiting-code') {
+      agentSay('type the code from your TV screen below — needed only this once, ever.');
+      $('codeBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      $('code').focus();
+    } else {
+      agentSay('TV said: ' + s.message);
+      await diagnose();
+    }
   }
   catch (e) { if (e.message === 'OFFLINE') showOffline(); else toast('⚠️ ' + e.message); }
 };
@@ -255,7 +296,12 @@ $('btnCode').onclick = async () => {
   if (!code) { toast('Type the code shown on the TV screen first.'); return; }
   try {
     const r = await api('/api/code', { code });
-    if (r.ok) toast('Code sent — waiting for TV to accept…');
+    if (r.ok) {
+      agentSay('code sent — waiting for the TV to accept…');
+      const s = await waitPhase(['ready'], 25000);
+      if (s && s.phase === 'ready') agentSay('connected ✓ — remote is live. Use it.');
+      else agentSay('TV did not confirm — recheck the code and resend, or press START.');
+    }
     else toast('⚠️ ' + (r.error || 'Code rejected — check it and resend.'));
   } catch (e) { if (e.message === 'OFFLINE') showOffline(); else toast('⚠️ ' + e.message); }
 };
@@ -292,6 +338,12 @@ async function autoFindServer() {
   }
 }
 autoFindServer();
+setTimeout(async () => {
+  try {
+    const s = await api('/api/status');
+    if (s.phase === 'ready') agentSay('connected ✓ — remote is live.');
+  } catch {}
+}, 2500);
 
 document.addEventListener('keydown', e => {
   if (e.repeat || document.activeElement === $('code')) return;

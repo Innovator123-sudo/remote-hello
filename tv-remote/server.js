@@ -6,6 +6,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const net = require('net');
 const { AndroidRemote, RemoteKeyCode, RemoteDirection } = require('androidtv-remote');
 
 const PORT = process.env.PORT || 8080;
@@ -133,6 +134,18 @@ function readBody(req) {
   });
 }
 
+function probeTcp(host, port, ms) {
+  return new Promise((resolve) => {
+    let done = false;
+    const fin = (v) => { if (!done) { done = true; try { s.destroy(); } catch {} resolve(v); } };
+    const s = net.connect(port, host);
+    s.setTimeout(ms);
+    s.on('connect', () => fin(true));
+    s.on('timeout', () => fin(false));
+    s.on('error', () => fin(false));
+  });
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
 
@@ -219,6 +232,12 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/cert') {
     try { json(res, 200, remote ? remote.getCertificate() : {}); }
     catch { json(res, 200, {}); }
+    return;
+  }
+  if (req.method === 'GET' && url.pathname === '/api/diagnose') {
+    const host = url.searchParams.get('host') || state.host || TV_HOST;
+    const [p6466, p6467] = await Promise.all([probeTcp(host, 6466, 1200), probeTcp(host, 6467, 1200)]);
+    json(res, 200, { host, remote6466: p6466, pairing6467: p6467, phase: state.phase });
     return;
   }
   json(res, 404, { ok: false });
