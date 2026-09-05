@@ -155,9 +155,15 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === 'GET' && url.pathname === '/') {
+  if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/tvlive.html')) {
+    // Hosted-first: the Railway/Render URL IS the remote — no localhost, no bat files.
+    // Serve the full button remote directly at / (same file GitHub Pages serves as index.html).
     res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end(fs.readFileSync(path.join(__dirname, 'tvlive.html')));
+    res.end(fs.readFileSync(path.join(__dirname, '..', 'index.html')));
+    return;
+  }
+  if (req.method === 'GET' && (url.pathname === '/health' || url.pathname === '/healthz' || url.pathname === '/api/health' || url.pathname === '/api/ping')) {
+    json(res, 200, { ok: true, uptime: Math.round(process.uptime()), phase: state.phase, time: new Date().toISOString() });
     return;
   }
   if (req.method === 'GET' && url.pathname === '/api/status') {

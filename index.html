@@ -248,7 +248,7 @@ async function diagnose() {
 $('btnStart').onclick = async () => {
   try {
     agentSay('finding server…');
-    if (!IS_LOCAL && !SERVER) await autoFindServer();
+    if (!IS_LOCAL && !SERVER && !HOSTED) await autoFindServer();
     let s;
     try { s = await api('/api/status'); }
     catch (e) { if (e.message === 'OFFLINE') showOffline(); return; }
@@ -292,9 +292,25 @@ $('btnCode').onclick = async () => {
   } catch (e) { if (e.message === 'OFFLINE') showOffline(); else toast('⚠️ ' + e.message); }
 };
 if (SERVER) $('srv').value = SERVER;
-if (!IS_LOCAL) {
+// Hosted-first: if this page itself was served by the remote server
+// (Railway / Render URL, or localhost:8080), same-origin IS the server —
+// no paste, no localhost hunt, no bat files. Only GitHub-Pages-style
+// static hosting needs the 🌐 box / localhost probe below.
+let HOSTED = false;
+async function sameOriginWorks() {
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 2500);
+    const r = await fetch('/api/status', { signal: ctl.signal });
+    clearTimeout(t);
+    const ct = r.headers.get('content-type') || '';
+    return r.ok && ct.includes('application/json');
+  } catch { return false; }
+}
+if (!IS_LOCAL && !SERVER) {
+  // default static-page message; cleared if same-origin proves we're hosted
   $('srvBox').style.display = 'block';
-  $('offline').innerHTML = '⚠️ <b>Cannot reach your laptop server yet.</b><br/>Usually the server is just off — run <code>tv-remote\\keep-on.bat</code> once on the laptop (auto-starts forever).<br/>Phone far from home? Run <code>share-tv.bat</code> and paste its link below → <b>Save</b>.<br/><button id="btnRetry" class="primary" style="margin-top:8px;padding:10px 18px">🔁 Retry connection</button><br/>On the laptop? Skip everything: <a href="http://localhost:8080/" style="color:#93c5fd;font-weight:800">🚀 open the local remote</a>';
+  $('offline').innerHTML = '⚠️ <b>Cannot reach the remote server yet.</b><br/>If you opened this page from <b>GitHub Pages</b>: paste your Railway URL below → <b>Save</b>.<br/>If you opened your <b>Railway URL</b> directly: just press <b>▶ START</b> — no paste, no laptop, no bat files needed.<br/><button id="btnRetry" class="primary" style="margin-top:8px;padding:10px 18px">🔁 Retry connection</button>';
 }
 $('btnSrv').onclick = async () => {
   SERVER = $('srv').value.trim().replace(/\/$/, '');
@@ -316,10 +332,18 @@ async function probe(base, mode) {
 function renderDiag() {
   if (DIAG.length) agentSay('auto-check: ' + DIAG.join(' · '));
 }
-// auto-fill: on a public page (GitHub Pages) try the laptop itself first —
-// browsers allow public pages to reach localhost, so usually no paste is needed.
+// auto-find: 1) same-origin (Railway/Render/localhost serve the API themselves)
+// 2) only for static pages: fall back to laptop localhost probe (old bat-file flow).
 async function autoFindServer() {
-  if (IS_LOCAL || SERVER) return;
+  if (SERVER) return;
+  if (await sameOriginWorks()) {
+    HOSTED = true;
+    SERVER = '';
+    try { localStorage.removeItem('tvServer'); } catch {}
+    $('srvBox').style.display = 'none';
+    return;
+  }
+  if (IS_LOCAL) return;
   DIAG = [];
   for (const b of ['http://localhost:8080', 'http://127.0.0.1:8080']) {
     const c = await probe(b, 'cors');

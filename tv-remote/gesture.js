@@ -505,8 +505,20 @@ document.addEventListener('visibilitychange', () => { dwellZone = null; });
 
 pollTv();
 setInterval(pollTv, 3000);
+async function sameOriginWorks() {
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 2500);
+    const r = await fetch('/api/status', { signal: ctl.signal });
+    clearTimeout(t);
+    return r.ok;
+  } catch { return false; }
+}
 async function autoFindServer() {
-  if (IS_LOCAL || SERVER) return false;
+  if (SERVER) return false;
+  // Hosted-first: Railway/Render URL serves the API itself — nothing to paste.
+  if (await sameOriginWorks()) return true;
+  if (IS_LOCAL) return true;
   for (const b of ['http://localhost:8080', 'http://127.0.0.1:8080']) {
     try {
       const ctl = new AbortController();
@@ -523,6 +535,7 @@ async function autoFindServer() {
   return false;
 }
 autoFindServer();
-setTimeout(() => {
-  if (!IS_LOCAL && !SERVER) toast('🌐 Phone? Paste the tunnel link once on the button page (same site), then reload — or add ?server=YOUR-LINK to this address.', 9000);
+setTimeout(async () => {
+  if (await sameOriginWorks()) return; // hosted URL — no paste needed
+  if (!IS_LOCAL && !SERVER) toast('🌐 Static page? Open your Railway URL directly (it IS the remote), or paste it once on the button page — then reload.', 9000);
 }, 9000);
