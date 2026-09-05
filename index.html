@@ -62,7 +62,8 @@ input{width:100%;background:#0a122a;border:1px solid #2a3f70;color:#fff;padding:
     ⚠️ <b>Remote server is NOT running</b> — this page alone cannot reach the TV.<br/>
     1️⃣ Run <code>tv-remote\keep-on.bat</code> once (server then starts by itself, forever)<br/>
     2️⃣ Or run <code>tv-remote\start-tv.bat</code> and keep its black window open<br/>
-    3️⃣ Then press <button id="btnRetry" class="primary" style="padding:8px 16px">🔁 Retry connection</button>
+    3️⃣ Then press <button id="btnRetry" class="primary" style="padding:8px 16px">🔁 Retry connection</button><br/>
+    On this laptop? Skip all of it: <a href="http://localhost:8080/" style="color:#93c5fd;font-weight:800">🚀 open the local remote — always works</a>
   </div>
 
   <div class="card">
@@ -293,7 +294,7 @@ $('btnCode').onclick = async () => {
 if (SERVER) $('srv').value = SERVER;
 if (!IS_LOCAL) {
   $('srvBox').style.display = 'block';
-  $('offline').innerHTML = '⚠️ <b>Cannot reach your laptop server yet.</b><br/>Usually the server is just off — run <code>tv-remote\\keep-on.bat</code> once on the laptop (auto-starts forever).<br/>Phone far from home? Run <code>share-tv.bat</code> and paste its link below → <b>Save</b>.<br/><button id="btnRetry" class="primary" style="margin-top:8px;padding:10px 18px">🔁 Retry connection</button>';
+  $('offline').innerHTML = '⚠️ <b>Cannot reach your laptop server yet.</b><br/>Usually the server is just off — run <code>tv-remote\\keep-on.bat</code> once on the laptop (auto-starts forever).<br/>Phone far from home? Run <code>share-tv.bat</code> and paste its link below → <b>Save</b>.<br/><button id="btnRetry" class="primary" style="margin-top:8px;padding:10px 18px">🔁 Retry connection</button><br/>On the laptop? Skip everything: <a href="http://localhost:8080/" style="color:#93c5fd;font-weight:800">🚀 open the local remote</a>';
 }
 $('btnSrv').onclick = async () => {
   SERVER = $('srv').value.trim().replace(/\/$/, '');
