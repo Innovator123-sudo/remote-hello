@@ -1,0 +1,7 @@
+# deps (reinstall with: npm install inside tv-remote/)
+tv-remote/node_modules/
+# private TV pairing certificate (per laptop, never share)
+tv-remote/cert.json
+# OS junk
+Thumbs.db
+Desktop.ini

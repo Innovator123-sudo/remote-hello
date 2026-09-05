@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Signal Test 1–100 — Universal Remote</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,system-ui,Arial;background:#070b16;color:#e8eefc;min-height:100vh}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;gap:10px;flex-wrap:wrap}
+a{color:#93c5fd}.logo{font-size:22px;font-weight:800}.logo span{color:#60a5fa}
+.wrap{max-width:900px;margin:0 auto;padding:0 18px 30px}
+.card{background:#0d152acc;border:1px solid #1e2d55;border-radius:16px;padding:18px;margin-bottom:14px}
+.warn{background:#2a1503;border:1px solid #9a3412;border-radius:12px;padding:12px;font-size:13.5px;line-height:1.55;color:#fed7aa}
+.warn b{color:#fff}.status-row{display:flex;gap:12px;align-items:center;background:#0a122a;border:1px solid #22345f;border-radius:12px;padding:12px;margin:12px 0}
+.dot{width:14px;height:14px;border-radius:50%;background:#f59e0b;box-shadow:0 0 12px #f59e0b}.dot.on{background:#22c55e;box-shadow:0 0 12px #22c55e}
+.bignum-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+#bigNum{font-size:72px;font-weight:900;background:#111d3d;border:2px solid #3b82f6;border-radius:20px;min-width:130px;text-align:center;padding:6px 10px}
+.meta{flex:1;min-width:220px}#sigProto{font-weight:800;color:#93c5fd}#sigCode{font-family:Consolas,monospace;font-size:15px;margin:4px 0}#sigDesc{font-size:14px;opacity:.9}
+.btnrow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+button{border:0;border-radius:11px;padding:13px 16px;font-weight:800;cursor:pointer;color:#fff}
+.primary{background:#2563eb}.go{background:#059669;font-size:17px;flex:1;min-width:160px}.ghost{background:#131f41;border:1px solid #2c447a}.danger{background:#7f1d1d}
+#grid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin-top:12px}
+@media(max-width:640px){#grid{grid-template-columns:repeat(5,1fr)}}
+.nbtn{background:#1a2650;border:1px solid #33498a;padding:10px 0;font-size:13px;border-radius:9px}
+.nbtn.cur{background:#2563eb;outline:2px solid #93c5fd}.nbtn.sent{border-color:#22c55e;color:#bbf7d0}
+#log{height:150px;overflow:auto;background:#040814;border:1px solid #1c2c55;border-radius:10px;padding:8px;font-family:Consolas,monospace;font-size:12px;margin-top:10px}
+#log div{padding:2px 0;border-bottom:1px dotted #16234a}
+.fix{font-size:13px;line-height:1.7;color:#c7d5f5}.fix li{margin-bottom:4px}
+.locked{background:#052e16;border:1px solid #15803d;border-radius:10px;padding:10px;margin-top:10px;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">📡 Universal<span>Remote</span> · Test 1–100</div>
+  <div><a href="index.html">← Back to remote</a></div>
+</header>
+<div class="wrap">
+
+  <div class="card warn">
+    <b>Your screenshot says “No compatible devices found” = no blaster plugged into USB.</b>
+    The 1–100 buttons below only move <b>real invisible light (IR)</b> when a USB Arduino + IR LED is connected.
+    Until then every press is DEMO (log only, TV can't see it). How to go LIVE:
+    plug Arduino → install CH340 driver → use a <b>data</b> USB cable (not charge-only) → Chrome/Edge/Brave → Connect → start at <b>#1</b>.
+  </div>
+
+  <div class="card">
+    <div class="status-row">
+      <div class="dot" id="statusDot"></div>
+      <div><div id="statusText" style="font-weight:700">DEMO mode — no output</div>
+      <div class="sub" id="modeNote" style="font-size:12px;opacity:.7">DEMO: nothing reaches the TV until you Connect.</div></div>
+    </div>
+    <div class="btnrow">
+      <button class="primary" id="btnConnect">🔌 Connect USB blaster</button>
+      <button class="ghost" id="btnDisconnect">✖ Disconnect</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="bignum-row">
+      <div id="bigNum">1</div>
+      <div class="meta">
+        <div id="sigProto">—</div>
+        <div id="sigCode">—</div>
+        <div id="sigDesc">—</div>
+      </div>
+    </div>
+    <div class="btnrow">
+      <button class="ghost" id="btnPrev">◀ Prev</button>
+      <button class="go" id="btnSend">📡 SEND signal <span id="sendN"></span></button>
+      <button class="ghost" id="btnNext">Next ▶</button>
+    </div>
+    <div class="btnrow">
+      <button class="primary" id="btnAuto">▶ Auto 1→100 (2s apart)</button>
+      <button class="go" id="btnLock" style="background:#7c3aed">⭐ THIS WORKED! Lock it</button>
+    </div>
+    <div class="locked">✅ Worked on: <b id="lockedList">—</b><br/>
+    <span style="font-size:12.5px;opacity:.8">When TV blinks / powers / shows volume: hit LOCK, note the number, then use that family on the main remote.</span></div>
+    <div id="grid"></div>
+    <div id="log"></div>
+  </div>
+
+  <div class="card fix">
+    <b>Fix “No compatible devices found” (do in order):</b>
+    <ol>
+      <li>Plug Arduino via USB. Check Windows Device Manager → Ports (COM &amp; LPT) shows <b>USB-SERIAL / CH340 / CP210x</b>. Nothing there = cable or driver issue.</li>
+      <li>Install <b>CH340 driver</b> (cheap Nanos need it), try another cable — most phone cables are charge-only and never show a port.</li>
+      <li>Use <b>Chrome / Edge / Brave</b> on laptop (not phone, not Firefox). Open via <b>http://localhost</b> or <b>http://127.0.0.1</b> (you already do — good).</li>
+      <li>Close Arduino IDE Serial Monitor — only one program can hold the port.</li>
+      <li>Press buttons <b>1 → 100 in order</b>, 2 sec apart, IR LED pointed at TV bottom bezel. #1 is verified Panasonic POWER — if #1 does nothing, suspect wiring/aim, not codes.</li>
+    </ol>
+  </div>
+
+</div>
+<script src="test100.js"></script>
+</body>
+</html>

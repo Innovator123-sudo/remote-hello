@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Gesture Remote — wave to control TV</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#04060d;color:#e8eefc;font-family:"Segoe UI",system-ui,Arial,sans-serif}
+#stage{position:fixed;inset:0}
+#view{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#topbar{position:absolute;top:0;left:0;right:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px;background:linear-gradient(180deg,#04060ddd,#04060d00);z-index:5}
+#topbar .title{font-weight:900;font-size:16px;margin-right:auto;text-shadow:0 2px 8px #000}
+#topbar .title span{color:#22c55e}
+.pill{background:#0a122add;border:1px solid #2a3f70;border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.pill.ok{border-color:#22c55e;color:#bbf7d0}
+.pill.warn{border-color:#eab308;color:#fde68a}
+.btn{background:#1a2650ee;border:1px solid #33498a;color:#fff;border-radius:10px;padding:9px 12px;font-weight:800;font-size:13px;cursor:pointer;touch-action:manipulation;white-space:nowrap}
+.btn:active{transform:scale(.94)}
+.btn.primary{background:#2563eb;border-color:#2563eb}
+#start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:#04060de6;z-index:10;text-align:center;padding:24px}
+#start h1{font-size:26px}
+#start h1 span{color:#22c55e}
+#start p{max-width:440px;color:#b8c7ea;font-size:14px;line-height:1.7}
+#startBtn{font-size:18px;padding:16px 34px;background:#059669;border:1px solid #059669;border-radius:14px;color:#fff;font-weight:900;cursor:pointer}
+#flash{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:8;pointer-events:none;font-size:min(22vw,120px);text-shadow:0 0 40px #22c55e}
+#flash small{display:block;font-size:20px;color:#fff;text-align:center;font-weight:900}
+#toast{position:absolute;bottom:76px;left:50%;transform:translateX(-50%);background:#3b0a0aee;border:1px solid #ef4444;border-radius:10px;padding:10px 16px;font-size:13.5px;display:none;z-index:9;max-width:92vw;text-align:center}
+#hint{position:absolute;bottom:0;left:0;right:0;padding:8px 12px;font-size:12px;color:#c7d5f5;background:linear-gradient(0deg,#04060ddd,#04060d00);z-index:5;text-align:center;line-height:1.6}
+#hint b{color:#fff}
+a{color:#93c5fd}
+select{background:#0a122a;color:#fff;border:1px solid #2a3f70;border-radius:10px;padding:8px;font-size:12.5px;font-weight:700}
+@media(max-width:640px){#topbar .title{font-size:14px}.btn{padding:8px 9px;font-size:12px}#hint{font-size:11px}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="view"></canvas>
+  <div id="topbar">
+    <div class="title">🖐 Gesture<span>Remote</span></div>
+    <div class="pill" id="camPill">camera off</div>
+    <div class="pill" id="tvPill">TV: ?</div>
+    <div class="pill" id="fpsPill">– fps</div>
+  </div>
+  <div id="topbar2" style="position:absolute;top:52px;left:0;right:0;display:flex;gap:8px;padding:0 12px;z-index:5;flex-wrap:wrap">
+    <button class="btn" id="switchBtn" title="Front / back camera">🔄 camera</button>
+    <button class="btn" id="boneBtn" title="Show hand skeleton">🦴 lines: on</button>
+    <select id="dwellSel" title="Hold time">
+      <option value="700">hold 0.7s</option>
+      <option value="1000" selected>hold 1s</option>
+      <option value="1500">hold 1.5s</option>
+    </select>
+    <a class="btn" href="tvlive.html" style="text-decoration:none;display:inline-block">← buttons</a>
+  </div>
+  <div id="flash"></div>
+  <div id="toast"></div>
+  <div id="hint"><b>Point</b> at letter <b>U · L · R · D</b>, <b>hold 1s</b> · <b>H</b> = Home (bottom) · slide finger on the right <b>VOL</b> strip · <b>👍 either hand</b> = OK · <b>👎</b> = Back</div>
+  <div id="start">
+    <h1>🖐 Gesture<span>Remote</span></h1>
+    <p>Uses your camera to track your hand — nothing is recorded or uploaded, all tracking runs on this device.<br/>Needs <b>HTTPS or localhost</b> + camera permission.<br/>Pair the TV first on the <a href="tvlive.html">button remote</a>.</p>
+    <button id="startBtn">📷 Start camera</button>
+    <p id="startErr" style="color:#fca5a5"></p>
+  </div>
+</div>
+<video id="cam" playsinline muted style="display:none"></video>
+<script type="module" src="gesture.js"></script>
+</body>
+</html>

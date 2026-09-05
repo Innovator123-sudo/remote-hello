@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Universal TV Remote — IR + RF (All Brands)</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="bg-glow"></div>
+
+<header>
+  <div class="logo">📡 Universal<span>Remote</span></div>
+  <div class="freq-badge" id="freqBadge">PANASONIC • IR 37kHz</div>
+</header>
+
+<main>
+  <section class="card panel">
+    <h2>1. Transmitter Link — REQUIRED</h2>
+    <p class="hint">
+      Laptop WiFi <b>cannot</b> control a Panasonic TV directly.
+      Panasonic (and all normal TVs) use <b>Infrared 940nm, 37-38kHz</b>, not WiFi/RF.
+      You need a <b>~$4 USB blaster</b>. No ADB. Just:
+      <code>Website → USB → Arduino → IR LED → TV</code>
+    </p>
+
+    <div class="status-row">
+      <div class="dot" id="statusDot"></div>
+      <div>
+        <div id="statusText" class="status-text">Disconnected — DEMO mode</div>
+        <div class="sub" id="portInfo">Visualizer only, no output</div>
+      </div>
+    </div>
+
+    <label>TV Brand (default: Panasonic — your TV)</label>
+    <select id="brandSelect">
+      <option value="panasonic" selected>Panasonic (VIERA — verified)</option>
+      <option value="samsung">Samsung</option>
+      <option value="lg">LG</option>
+      <option value="sony">Sony</option>
+      <option value="philips">Philips</option>
+      <option value="tcl">TCL</option>
+      <option value="hisense">Hisense</option>
+      <option value="sharp">Sharp / Aquos</option>
+      <option value="toshiba">Toshiba</option>
+      <option value="vizio">Vizio</option>
+      <option value="generic_rf">Generic 433MHz RF device</option>
+    </select>
+
+    <button id="btnFind" class="autofind">🔍 TV not responding? AUTO-FIND my TV</button>
+    <div class="sub" id="findStatus" style="margin:4px 2px 8px"></div>
+    <a href="test100.html" style="display:block;text-align:center;background:#7c3aed;color:#fff;font-weight:800;padding:13px;border-radius:11px;text-decoration:none;margin-top:8px">🧪 Open 1–100 SIGNAL TESTER (go one by one)</a>
+    <a href="tv-remote/tvlive.html" style="display:block;text-align:center;background:#059669;color:#fff;font-weight:800;padding:13px;border-radius:11px;text-decoration:none;margin-top:8px">✅ LIVE WiFi REMOTE — your TV found at 192.168.1.84 (run tv-remote/start-tv.bat first)</a>
+
+    <label>Link Type</label>
+    <div class="grid2">
+      <button id="btnSerial" class="primary">🔌 Connect USB Blaster</button>
+      <button id="btnWifi" class="secondary">📶 Connect ESP WiFi</button>
+    </div>
+    <input id="espIp" placeholder="ESP IP e.g. ws://192.168.1.50:81" />
+    <div class="grid2">
+      <button id="btnDemo" class="ghost">▶ Demo Mode</button>
+      <button id="btnDisconnect" class="ghost">✖ Disconnect</button>
+    </div>
+
+    <label>RF Frequency (only for Generic 433MHz mode — IR ignores this)</label>
+    <div class="btn-row" id="freqRow">
+      <button class="chip" data-freq="31500000">315 MHz</button>
+      <button class="chip active-select" data-freq="43392000">433.92 MHz</button>
+      <button class="chip" data-freq="86800000">868 MHz</button>
+    </div>
+
+    <div class="wiring">
+      <b>Universal wiring (works for Panasonic + all):</b><br/>
+      • <b>IR LED (MUST for TV):</b> Arduino <code>D3</code> → <code>220Ω</code> → 2N2222 Base |
+      5V → IR LED+ (940nm), IR LED− → 2N2222 Collector, Emitter → GND.
+      Point LED at TV (5–10m). Short-range test: D3 → 100Ω → LED → GND works to ~3m.<br/>
+      • <b>RF (optional):</b> FS1000A <code>VCC→5V GND→GND DATA→D12</code> + 17.3cm antenna.<br/>
+      Upload <code>universal_bridge.ino</code> (IRremote + RCSwitch libs), then Connect. Chrome/Edge required.
+    </div>
+
+    <h2>2. Signal</h2>
+    <canvas id="wave" width="600" height="140"></canvas>
+    <div class="sig-meta">
+      <span id="lastCode">Last: —</span>
+      <span id="modLabel">IR 38kHz / OOK</span>
+    </div>
+    <div id="log"></div>
+  </section>
+
+  <section class="card remote-card">
+    <h2 id="remoteTitle">Panasonic Remote</h2>
+    <div class="remote">
+      <div class="row top-row">
+        <button class="rbtn power" data-cmd="POWER">⏻</button>
+        <button class="rbtn" data-cmd="INPUT">AV/TV</button>
+        <button class="rbtn" data-cmd="MUTE">Mute</button>
+      </div>
+
+      <div class="nums">
+        <button class="rbtn" data-cmd="1">1</button>
+        <button class="rbtn" data-cmd="2">2</button>
+        <button class="rbtn" data-cmd="3">3</button>
+        <button class="rbtn" data-cmd="4">4</button>
+        <button class="rbtn" data-cmd="5">5</button>
+        <button class="rbtn" data-cmd="6">6</button>
+        <button class="rbtn" data-cmd="7">7</button>
+        <button class="rbtn" data-cmd="8">8</button>
+        <button class="rbtn" data-cmd="9">9</button>
+        <button class="rbtn" data-cmd="0">0</button>
+        <button class="rbtn" data-cmd="CH+">P+</button>
+        <button class="rbtn" data-cmd="CH-">P−</button>
+      </div>
+
+      <div class="row">
+        <button class="rbtn vol" data-cmd="VOL-">VOL −</button>
+        <button class="rbtn vol" data-cmd="VOL+">VOL +</button>
+      </div>
+
+      <div class="dpad">
+        <div></div><button class="rbtn" data-cmd="UP">▲</button><div></div>
+        <button class="rbtn" data-cmd="LEFT">◀</button>
+        <button class="rbtn ok" data-cmd="OK">OK</button>
+        <button class="rbtn" data-cmd="RIGHT">▶</button>
+        <div></div><button class="rbtn" data-cmd="DOWN">▼</button><div></div>
+      </div>
+
+      <div class="row">
+        <button class="rbtn" data-cmd="MENU">Menu</button>
+        <button class="rbtn" data-cmd="BACK">Return</button>
+        <button class="rbtn" data-cmd="EXIT">Exit</button>
+      </div>
+      <div class="row">
+        <button class="rbtn" data-cmd="PLAY">▶</button>
+        <button class="rbtn" data-cmd="PAUSE">❚❚</button>
+        <button class="rbtn" data-cmd="STOP">■</button>
+      </div>
+    </div>
+    <p class="hint small">Panasonic tip: POWER needs 2–3 presses (toggle). Point IR LED straight at TV sensor (bottom bezel). Hold VOL/P to repeat.</p>
+  </section>
+</main>
+
+<footer>
+  Universal bridge: IR 940nm LED (all TVs) + optional 433MHz RF. Laptop alone cannot emit IR/RF — USB blaster required. Firmware: <code>rf_bridge.ino</code> / <code>rf_bridge_esp.ino</code>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
