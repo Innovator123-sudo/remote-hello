@@ -117,6 +117,7 @@ const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Private-Network': 'true',
 };
 function json(res, code, obj) {
   res.writeHead(code, Object.assign({ 'Content-Type': 'application/json' }, CORS));

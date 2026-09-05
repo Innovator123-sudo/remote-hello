@@ -260,6 +260,26 @@ $('btnSrv').onclick = async () => {
   if (!SERVER) { toast('Paste the tunnel URL first.'); return; }
   toast('Server saved — contacting TV…');
 };
+// auto-fill: on a public page (GitHub Pages) try the laptop itself first —
+// browsers allow public pages to reach localhost, so usually no paste is needed.
+async function autoFindServer() {
+  if (IS_LOCAL || SERVER) return;
+  for (const b of ['http://localhost:8080', 'http://127.0.0.1:8080']) {
+    try {
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), 2500);
+      const r = await fetch(b + '/api/status', { signal: ctl.signal });
+      clearTimeout(t);
+      if (!r.ok) continue;
+      SERVER = b;
+      try { localStorage.setItem('tvServer', SERVER); } catch {}
+      $('srv').value = SERVER;
+      toast('✅ Auto-connected to your laptop — no paste needed.');
+      return;
+    } catch {}
+  }
+}
+autoFindServer();
 
 document.addEventListener('keydown', e => {
   if (e.repeat || document.activeElement === $('code')) return;

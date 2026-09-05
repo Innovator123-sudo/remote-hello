@@ -505,6 +505,24 @@ document.addEventListener('visibilitychange', () => { dwellZone = null; });
 
 pollTv();
 setInterval(pollTv, 3000);
-if (!IS_LOCAL && !SERVER) {
-  setTimeout(() => toast('🌐 Online mode: set your tunnel URL once on the button page (same site), then reload here — or add ?server=YOUR-LINK to this address.', 9000), 1500);
+async function autoFindServer() {
+  if (IS_LOCAL || SERVER) return false;
+  for (const b of ['http://localhost:8080', 'http://127.0.0.1:8080']) {
+    try {
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), 2500);
+      const r = await fetch(b + '/api/status', { signal: ctl.signal });
+      clearTimeout(t);
+      if (!r.ok) continue;
+      SERVER = b;
+      try { localStorage.setItem('tvServer', SERVER); } catch {}
+      toast('✅ Auto-connected to your laptop.');
+      return true;
+    } catch {}
+  }
+  return false;
 }
+autoFindServer();
+setTimeout(() => {
+  if (!IS_LOCAL && !SERVER) toast('🌐 Phone? Paste the tunnel link once on the button page (same site), then reload — or add ?server=YOUR-LINK to this address.', 9000);
+}, 9000);

@@ -38,6 +38,10 @@ reaching home-network devices), so the Pages site relays through your laptop:
 2. Run `tv-remote\share-tv.bat`, copy the `https://…trycloudflare.com` link
 3. Open the Pages URL, paste the link in the 🌐 box → Save → pair & control
 
+Same laptop = zero paste: the page auto-finds `http://localhost:8080`
+(browsers allow public pages to reach localhost), so the 🌐 box fills
+itself. Only phones need the one-time paste.
+
 ## Change TV
 
 Default TV is `192.168.1.84`. Override without editing code:
