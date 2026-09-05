@@ -62,9 +62,9 @@ ol.hint{padding-left:20px;margin:6px 0}
 
   <div id="offline">
     ⚠️ <b>Remote server is NOT running</b> — this page alone cannot reach the TV.<br/>
-    1️⃣ Double-click <code>tv-remote\start-tv.bat</code> (keep its black window open)<br/>
-    2️⃣ Open <code>http://localhost:8080</code> — the address bar must say <b>:8080</b>, not :5500<br/>
-    3️⃣ Come back here and press <b>Start pairing</b>.
+    1️⃣ Run <code>tv-remote\keep-on.bat</code> once (server then starts by itself, forever)<br/>
+    2️⃣ Or run <code>tv-remote\start-tv.bat</code> and keep its black window open<br/>
+    3️⃣ Then press <button id="btnRetry" class="primary" style="padding:8px 16px">🔁 Retry connection</button>
   </div>
 
   <div class="card">
@@ -232,9 +232,21 @@ document.querySelectorAll('#pad [data-key]').forEach(b => {
 });
 
 $('btnStart').onclick = async () => {
-  try { await api('/api/start', {}); toast('Pairing started — watch the TV screen for the code.'); }
+  try {
+    if (!IS_LOCAL && !SERVER) { toast('Looking for your laptop server first…'); await autoFindServer(); }
+    await api('/api/start', {});
+    toast('Pairing started — watch the TV screen for the code.');
+  }
   catch (e) { if (e.message === 'OFFLINE') showOffline(); else toast('⚠️ ' + e.message); }
 };
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.closest && e.target.closest('#btnRetry')) {
+    offlineCount = 0;
+    $('offline').style.display = 'none';
+    toast('Retrying… looking for your laptop server.');
+    autoFindServer();
+  }
+});
 $('btnStop').onclick = async () => {
   try { await api('/api/stop', {}); } catch (e) { if (e.message === 'OFFLINE') showOffline(); }
 };
@@ -252,7 +264,7 @@ $('btnNF').onclick = async () => { try { await api('/api/applink', { url: 'https
 if (SERVER) $('srv').value = SERVER;
 if (!IS_LOCAL) {
   $('srvBox').style.display = 'block';
-  $('offline').innerHTML = '⚠️ <b>Online mode</b> — this page alone cannot reach your TV (browsers block websites from touching home devices).<br/>1️⃣ On your laptop, run <code>tv-remote\\share-tv.bat</code><br/>2️⃣ Paste the <code>https://…trycloudflare.com</code> link it prints below → <b>Save</b><br/>3️⃣ Press <b>Start pairing</b>.';
+  $('offline').innerHTML = '⚠️ <b>Cannot reach your laptop server yet.</b><br/>Usually the server is just off — run <code>tv-remote\\keep-on.bat</code> once on the laptop (auto-starts forever).<br/>Phone far from home? Run <code>share-tv.bat</code> and paste its link below → <b>Save</b>.<br/><button id="btnRetry" class="primary" style="margin-top:8px;padding:10px 18px">🔁 Retry connection</button>';
 }
 $('btnSrv').onclick = async () => {
   SERVER = $('srv').value.trim().replace(/\/$/, '');
