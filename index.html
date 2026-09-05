@@ -198,6 +198,7 @@ function showOffline() {
   $('offline').style.display = 'block';
   $('dot').className = 'dot err';
   $('stext').textContent = 'Server not running — see red box above.';
+  renderDiag();
 }
 
 // press-and-hold: tap = short press, hold 550ms+ = single long press
@@ -300,24 +301,39 @@ $('btnSrv').onclick = async () => {
   if (!SERVER) { toast('Paste the tunnel URL first.'); return; }
   toast('Server saved — contacting TV…');
 };
+let DIAG = [];
+async function probe(base, mode) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 2500);
+  const t0 = performance.now();
+  try {
+    const r = await fetch(base + '/api/status', { signal: ctl.signal, mode });
+    clearTimeout(t);
+    return { ok: r.ok, status: r.status, opaque: r.type === 'opaque', ms: Math.round(performance.now() - t0) };
+  } catch { clearTimeout(t); return { ok: false, err: true, ms: Math.round(performance.now() - t0) }; }
+}
+function renderDiag() {
+  if (DIAG.length) agentSay('auto-check: ' + DIAG.join(' · '));
+}
 // auto-fill: on a public page (GitHub Pages) try the laptop itself first —
 // browsers allow public pages to reach localhost, so usually no paste is needed.
 async function autoFindServer() {
   if (IS_LOCAL || SERVER) return;
+  DIAG = [];
   for (const b of ['http://localhost:8080', 'http://127.0.0.1:8080']) {
-    try {
-      const ctl = new AbortController();
-      const t = setTimeout(() => ctl.abort(), 2500);
-      const r = await fetch(b + '/api/status', { signal: ctl.signal });
-      clearTimeout(t);
-      if (!r.ok) continue;
+    const c = await probe(b, 'cors');
+    if (c.ok) {
       SERVER = b;
       try { localStorage.setItem('tvServer', SERVER); } catch {}
       $('srv').value = SERVER;
       toast('✅ Auto-connected to your laptop — no paste needed.');
       return;
-    } catch {}
+    }
+    const n = await probe(b, 'no-cors');
+    if (n.opaque) DIAG.push(b + ' answers but this browser BLOCKS the page (Shields/adblock?) — try Chrome/Edge, or open http://localhost:8080 directly');
+    else DIAG.push(b + ' silent (' + c.ms + 'ms) — server off? run keep-on.bat on the laptop');
   }
+  renderDiag();
 }
 autoFindServer();
 setTimeout(async () => {
@@ -348,7 +364,18 @@ setInterval(async () => {
   try {
     s = await api('/api/status');
   } catch (e) {
-    if (e.message === 'OFFLINE') { offlineCount++; if (offlineCount >= 2) showOffline(); }
+    if (e.message === 'OFFLINE') {
+      offlineCount++;
+      if (offlineCount >= 2) showOffline();
+      // self-heal: re-probe every ~12s; drop a dead localhost guess so we can refind it
+      if (offlineCount % 8 === 0) {
+        if (/localhost|127\.0\.0\.1/.test(SERVER)) {
+          SERVER = '';
+          try { localStorage.removeItem('tvServer'); } catch {}
+        }
+        autoFindServer();
+      }
+    }
     return;
   }
   offlineCount = 0;

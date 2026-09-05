@@ -221,6 +221,9 @@ const server = http.createServer(async (req, res) => {
     '/test100.js': ['../test100.js', 'application/javascript'],
     '/gesture.html': ['gesture.html', 'text/html'],
     '/gesture.js': ['gesture.js', 'application/javascript'],
+    '/tv-remote/gesture.html': ['gesture.html', 'text/html'],
+    '/tv-remote/gesture.js': ['gesture.js', 'application/javascript'],
+    '/tv-remote/tvlive.html': ['tvlive.html', 'text/html'],
   };
   if (req.method === 'GET' && STATIC[url.pathname]) {
     try {
